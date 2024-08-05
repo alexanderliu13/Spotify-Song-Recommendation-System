@@ -3,6 +3,7 @@ from recommendation import get_playlist_data, get_access_token, hybrid_recommend
 import config
 from sklearn.preprocessing import MinMaxScaler
 
+
 CLIENT_ID = config.CLIENT_ID
 CLIENT_SECRET = config.CLIENT_SECRET
 token = get_access_token(CLIENT_ID, CLIENT_SECRET)
