@@ -11,7 +11,6 @@ import pprint
 from sklearn.preprocessing import MinMaxScaler
 import tabulate
 
-
 def content_based_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5):
     if input_song_name not in music_df['Song Name'].values:
         print(f"Sorry, {input_song_name} is not in the database. Please choose a song that is.")
