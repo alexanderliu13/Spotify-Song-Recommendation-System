@@ -1,3 +1,3 @@
-CLIENT_ID = '7eb66ca39e4f48dca874758731f3c4d8'
-CLIENT_SECRET = 'e40afa1d66ca4eb3ade5ae9615e56799'
+CLIENT_ID = ${{ secrets.CLIENT_ID }}
+CLIENT_SECRET = ${{ secrets.CLIENT_SECRET }}
 
