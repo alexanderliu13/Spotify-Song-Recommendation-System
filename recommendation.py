@@ -3,13 +3,8 @@ import base64
 import pandas as pd
 import spotipy
 import numpy as np
-import json
-import config
-from datetime import datetime
 from sklearn.metrics.pairwise import cosine_similarity
-import pprint
-from sklearn.preprocessing import MinMaxScaler
-import tabulate
+
 
 
 def content_based_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5):

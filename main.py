@@ -1,7 +1,6 @@
 import streamlit as st
 from recommendation import get_playlist_data, get_access_token, hybrid_recommendations, get_playlist_name, get_playlist_image, get_song_image
 import config
-import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
 CLIENT_ID = config.CLIENT_ID
