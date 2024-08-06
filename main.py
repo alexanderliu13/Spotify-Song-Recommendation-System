@@ -9,12 +9,10 @@ CLIENT_SECRET = config.CLIENT_SECRET
 token = get_access_token(CLIENT_ID, CLIENT_SECRET)
 
 st.title("Spotify Music Recommendation System")
-status = True
+
 input_song_name = None
-suggestion = True
 
 playlist_link = st.text_input('Enter a Spotify Playlist URL')
-# playlist_link = "https://open.spotify.com/playlist/4qpL3avso6uBuiUniFCIx2?si=028c95e47c3a4edd"
 playlist_id = playlist_link[34: 56]
 
 if playlist_id:
@@ -23,8 +21,6 @@ if playlist_id:
     music_df = get_playlist_data(playlist_id, token)
     st.write(f'Playlist Name: **{playlist_name}**')
     st.image(playlist_image, width = 300)
-    # else:
-    #     st.write("Failed to retrieve playlist data.")
 
     scaler = MinMaxScaler()
     music_features = music_df[['Danceability', 'Energy', 'Key', 'Loudness', 'Mode', 'Speechiness', 'Acousticness', 'Instrumentalness', 'Liveness', 'Valence', 'Tempo']].values
@@ -36,12 +32,11 @@ if playlist_id:
             'Song Popularities',
             0, 100, 50)
         recommendations = hybrid_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5, alpha=popularity_metric/100)
-        if suggestion:
-            st.write("Recommended Songs:")
-            for index, row in recommendations.iterrows():
-                url = row['External URLs']
-                st.markdown(f"[**{row['Song Name']}**](%s)" % url + f"  \nRecommendation Score: {round(row['Recommendation Score'], 2)}")
-                album_id = row["Album ID"]
-                album_image = get_song_image(album_id, token)['images'][0]['url']
-                st.image(album_image, width = 200)
-                st.write("\n\n")
+        st.write("Recommended Songs:")
+        for index, row in recommendations.iterrows():
+            url = row['External URLs']
+            st.markdown(f"[**{row['Song Name']}**](%s)" % url + f"  \nRecommendation Score: {round(row['Recommendation Score'], 2)}")
+            album_id = row["Album ID"]
+            album_image = get_song_image(album_id, token)['images'][0]['url']
+            st.image(album_image, width = 200)
+            st.write("\n\n")
