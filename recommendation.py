@@ -20,6 +20,7 @@ def content_based_recommendations(input_song_name, music_df, music_features_scal
         music_df.loc[index, 'Similarity Score'] = round(similarity_scores[0][index] * 100, 2)
     return music_df
 
+
 def hybrid_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5, alpha=0.5):
     if input_song_name not in music_df['Song Name'].values:
         print(f"Sorry, {input_song_name} is not in the database. Please choose a song that is.")
@@ -35,6 +36,7 @@ def hybrid_recommendations(input_song_name, music_df, music_features_scaled, num
     hybrid_recommendations_sorted = hybrid_recommendations_sorted.loc[hybrid_recommendations_sorted["Song Name"] != input_song_name]
     top_hrs = hybrid_recommendations_sorted.head(num_recommendations)
     return top_hrs
+
 
 def get_access_token(CLIENT_ID, CLIENT_SECRET):
     credentials = CLIENT_ID + ":" + CLIENT_SECRET
@@ -54,6 +56,7 @@ def get_access_token(CLIENT_ID, CLIENT_SECRET):
     else:
         print("Error obtaining access token.")
         exit()
+
 
 def get_playlist_data(playlist_id, access_token):
     sp = spotipy.Spotify(auth=access_token)
@@ -113,14 +116,19 @@ def get_playlist_data(playlist_id, access_token):
         music_data.append(song_data)
     df = pd.DataFrame(music_data)
     return df
+
+
 def get_playlist_name(playlist_id, access_token):
     sp = spotipy.Spotify(auth=access_token)
     response = sp.playlist(playlist_id, fields = 'name')
     return response['name']
+
+
 def get_playlist_image(playlist_id, access_token):
     sp = spotipy.Spotify(auth=access_token)
     response = sp.playlist(playlist_id, fields = 'images')
     return response['images'][0]['url']
+
 
 def get_song_image(album_id, access_token):
     sp = spotipy.Spotify(auth=access_token)
