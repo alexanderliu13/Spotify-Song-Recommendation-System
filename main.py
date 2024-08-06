@@ -8,7 +8,7 @@ CLIENT_ID = config.CLIENT_ID
 CLIENT_SECRET = config.CLIENT_SECRET
 token = get_access_token(CLIENT_ID, CLIENT_SECRET)
 
-st.title("Spotify Music Recommendation System")
+st.title("Spotify Song Recommender")
 
 input_song_name = None
 
@@ -26,7 +26,11 @@ if playlist_id:
     music_features = music_df[['Danceability', 'Energy', 'Key', 'Loudness', 'Mode', 'Speechiness', 'Acousticness', 'Instrumentalness', 'Liveness', 'Valence', 'Tempo']].values
     music_features_scaled = scaler.fit_transform(music_features)
 
-    input_song_name = st.text_input('Enter your song for suggestion:')
+    song_list = []
+    for index, row in music_df.iterrows():
+        song_list.append(row['Song Name'])
+    input_song_name = st.selectbox('Select your song for suggestion:', song_list)
+
     if input_song_name:
         popularity_metric = st.slider(
             'Song Popularities',
