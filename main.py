@@ -1,7 +1,7 @@
 import requests
 import streamlit as st
 from spotipy.exceptions import SpotifyException
-from recommendation import AUDIO_FEATURES, get_playlist_data, get_access_token, hybrid_recommendations, get_playlist_name, get_playlist_image, get_song_image, parse_playlist_id
+from recommendation import AUDIO_FEATURES, get_playlist_data, get_access_token, hybrid_recommendations, get_playlist_name, get_playlist_image, get_song_image, parse_playlist_id, song_labels
 import config
 from sklearn.preprocessing import MinMaxScaler
 
@@ -12,7 +12,7 @@ token = get_access_token(CLIENT_ID, CLIENT_SECRET)
 
 st.title("Spotify Song Recommender")
 
-input_song_name = None
+input_track_id = None
 
 playlist_link = st.text_input('Enter a Spotify Playlist URL')
 playlist_id = parse_playlist_id(playlist_link)
@@ -49,16 +49,14 @@ if playlist_id:
     music_features = music_df[list(AUDIO_FEATURES.values())].values
     music_features_scaled = scaler.fit_transform(music_features)
 
-    song_list = []
-    for index, row in music_df.iterrows():
-        song_list.append(row['Song Name'])
-    input_song_name = st.selectbox('Select your song for suggestion:', song_list)
+    labels = song_labels(music_df)
+    input_track_id = st.selectbox('Select your song for suggestion:', list(labels), format_func=labels.get)
 
-    if input_song_name:
+    if input_track_id:
         target_popularity = st.slider(
             'Target Popularity (0 = underground, 100 = mainstream)',
             0, 100, 50)
-        recommendations = hybrid_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5, target_popularity=target_popularity)
+        recommendations = hybrid_recommendations(input_track_id, music_df, music_features_scaled, num_recommendations=5, target_popularity=target_popularity)
         st.write("Recommended Songs:")
         for index, row in recommendations.iterrows():
             url = row['External URLs']
