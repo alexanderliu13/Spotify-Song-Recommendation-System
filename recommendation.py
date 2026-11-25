@@ -7,11 +7,11 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-def content_based_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5):
-    if input_song_name not in music_df['Song Name'].values:
-        print(f"Sorry, {input_song_name} is not in the database. Please choose a song that is.")
+def content_based_recommendations(input_track_id, music_df, music_features_scaled, num_recommendations=5):
+    if input_track_id not in music_df['Track ID'].values:
+        print(f"Sorry, track {input_track_id} is not in the database. Please choose a song that is.")
         return
-    song_index = music_df[music_df['Song Name'] == input_song_name].index[0]
+    song_index = music_df[music_df['Track ID'] == input_track_id].index[0]
     similarity_scores = cosine_similarity([music_features_scaled[song_index]], music_features_scaled)
     scores_descending_sort = np.flip(similarity_scores.argsort())
     top_scores = scores_descending_sort[0][1:num_recommendations + 1]
@@ -22,20 +22,30 @@ def content_based_recommendations(input_song_name, music_df, music_features_scal
     return music_df
 
 
-def hybrid_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5,
+def hybrid_recommendations(input_track_id, music_df, music_features_scaled, num_recommendations=5,
                            target_popularity=50, popularity_weight=0.5):
-    if input_song_name not in music_df['Song Name'].values:
-        print(f"Sorry, {input_song_name} is not in the database. Please choose a song that is.")
+    if input_track_id not in music_df['Track ID'].values:
+        print(f"Sorry, track {input_track_id} is not in the database. Please choose a song that is.")
         return
-    hybrid_recommendations = content_based_recommendations(input_song_name, music_df,
+    hybrid_recommendations = content_based_recommendations(input_track_id, music_df,
                                                            music_features_scaled, num_recommendations)
     popularity_match = 100 - (hybrid_recommendations['Popularity'] - target_popularity).abs()
     hybrid_recommendations['Recommendation Score'] = (popularity_weight * popularity_match +
                                                       (1 - popularity_weight) * hybrid_recommendations['Similarity Score'])
     hybrid_recommendations_sorted = hybrid_recommendations.sort_values(by='Recommendation Score', ascending=False)
-    hybrid_recommendations_sorted = hybrid_recommendations_sorted.loc[hybrid_recommendations_sorted["Song Name"] != input_song_name]
+    input_song = music_df.loc[music_df['Track ID'] == input_track_id].iloc[0]
+    same_song = ((hybrid_recommendations_sorted['Song Name'] == input_song['Song Name']) &
+                 (hybrid_recommendations_sorted['Artists'] == input_song['Artists']))
+    hybrid_recommendations_sorted = hybrid_recommendations_sorted.loc[~same_song]
     top_hrs = hybrid_recommendations_sorted.head(num_recommendations)
     return top_hrs
+
+
+def song_labels(music_df):
+    labels = music_df['Song Name'] + ' — ' + music_df['Artists']
+    duplicated = labels.duplicated(keep=False)
+    labels[duplicated] = labels[duplicated] + ' (' + music_df.loc[duplicated, 'Album Name'] + ')'
+    return dict(zip(music_df['Track ID'], labels))
 
 
 def parse_playlist_id(playlist_link):
