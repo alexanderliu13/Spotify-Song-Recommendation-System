@@ -7,7 +7,7 @@ Through this process, I've picked up valuable skills in machine learning and dat
 ## Using your own credentials
 You will need to register your app and get your own credentials from the [Spotify for Developers Dashboard](https://developer.spotify.com/dashboard).
 ## Features
-* Accepts user input for song popularity and combines this with song similarity to generate 5 song recommendations
+* Accepts a target popularity (0 = underground, 100 = mainstream) and combines how close each song is to that target with song similarity to generate 5 song recommendations
 * Provides recommendation scores for each song on a 100-point scale
 * Provides Spotify URLs and Spotify Cover Arts for each song
 
