@@ -1,3 +1,4 @@
+import re
 import requests
 import base64
 import pandas as pd
@@ -21,21 +22,25 @@ def content_based_recommendations(input_song_name, music_df, music_features_scal
     return music_df
 
 
-def hybrid_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5, alpha=0.5):
+def hybrid_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5,
+                           target_popularity=50, popularity_weight=0.5):
     if input_song_name not in music_df['Song Name'].values:
         print(f"Sorry, {input_song_name} is not in the database. Please choose a song that is.")
         return
-    content_recommendation = content_based_recommendations(input_song_name, music_df,
+    hybrid_recommendations = content_based_recommendations(input_song_name, music_df,
                                                            music_features_scaled, num_recommendations)
-    hybrid_recommendations = content_recommendation
-    for index, row in hybrid_recommendations.iterrows():
-        hybrid_recommendations.loc[index, 'Recommendation Score'] = (alpha *
-                                                                     hybrid_recommendations.loc[index, 'Popularity'] +
-                                                                     (1 - alpha) * hybrid_recommendations.loc[index, 'Similarity Score'])
+    popularity_match = 100 - (hybrid_recommendations['Popularity'] - target_popularity).abs()
+    hybrid_recommendations['Recommendation Score'] = (popularity_weight * popularity_match +
+                                                      (1 - popularity_weight) * hybrid_recommendations['Similarity Score'])
     hybrid_recommendations_sorted = hybrid_recommendations.sort_values(by='Recommendation Score', ascending=False)
     hybrid_recommendations_sorted = hybrid_recommendations_sorted.loc[hybrid_recommendations_sorted["Song Name"] != input_song_name]
     top_hrs = hybrid_recommendations_sorted.head(num_recommendations)
     return top_hrs
+
+
+def parse_playlist_id(playlist_link):
+    match = re.search(r'(?:playlist[/:]|^)([A-Za-z0-9]{22})(?:$|[/?#&])', playlist_link.strip())
+    return match.group(1) if match else None
 
 
 def get_access_token(CLIENT_ID, CLIENT_SECRET):

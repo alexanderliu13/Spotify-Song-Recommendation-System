@@ -1,5 +1,5 @@
 import streamlit as st
-from recommendation import get_playlist_data, get_access_token, hybrid_recommendations, get_playlist_name, get_playlist_image, get_song_image
+from recommendation import get_playlist_data, get_access_token, hybrid_recommendations, get_playlist_name, get_playlist_image, get_song_image, parse_playlist_id
 import config
 from sklearn.preprocessing import MinMaxScaler
 
@@ -13,7 +13,10 @@ st.title("Spotify Song Recommender")
 input_song_name = None
 
 playlist_link = st.text_input('Enter a Spotify Playlist URL')
-playlist_id = playlist_link[34: 56]
+playlist_id = parse_playlist_id(playlist_link)
+
+if playlist_link and not playlist_id:
+    st.error('That does not look like a Spotify playlist URL. Paste a link like https://open.spotify.com/playlist/...')
 
 if playlist_id:
     playlist_name = get_playlist_name(playlist_id, token)
@@ -32,10 +35,10 @@ if playlist_id:
     input_song_name = st.selectbox('Select your song for suggestion:', song_list)
 
     if input_song_name:
-        popularity_metric = st.slider(
-            'Song Popularities',
+        target_popularity = st.slider(
+            'Target Popularity (0 = underground, 100 = mainstream)',
             0, 100, 50)
-        recommendations = hybrid_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5, alpha=popularity_metric/100)
+        recommendations = hybrid_recommendations(input_song_name, music_df, music_features_scaled, num_recommendations=5, target_popularity=target_popularity)
         st.write("Recommended Songs:")
         for index, row in recommendations.iterrows():
             url = row['External URLs']
