@@ -65,63 +65,63 @@ def get_access_token(CLIENT_ID, CLIENT_SECRET):
         exit()
 
 
+RECCOBEATS_AUDIO_FEATURES_URL = 'https://api.reccobeats.com/v1/audio-features'
+RECCOBEATS_MAX_IDS = 40
+AUDIO_FEATURES = {
+    'danceability': 'Danceability', 'energy': 'Energy', 'key': 'Key', 'loudness': 'Loudness', 'mode': 'Mode',
+    'speechiness': 'Speechiness', 'acousticness': 'Acousticness', 'instrumentalness': 'Instrumentalness',
+    'liveness': 'Liveness', 'valence': 'Valence', 'tempo': 'Tempo',
+}
+PLAYLIST_COLUMNS = ['Song Name', 'Artists', 'Album Name', 'Album ID', 'Track ID', 'Popularity', 'Release Date',
+                    'Duration (ms)', 'Explicit', 'External URLs', *AUDIO_FEATURES.values()]
+
+
+def get_audio_features(track_ids):
+    features = {}
+    for i in range(0, len(track_ids), RECCOBEATS_MAX_IDS):
+        batch = track_ids[i:i + RECCOBEATS_MAX_IDS]
+        response = requests.get(RECCOBEATS_AUDIO_FEATURES_URL, params={'ids': ','.join(batch)}, timeout=30)
+        response.raise_for_status()
+        for item in response.json().get('content', []):
+            track_id = item['href'].rsplit('/', 1)[-1]
+            features[track_id] = {column: item.get(key) for key, column in AUDIO_FEATURES.items()}
+    return features
+
+
 def get_playlist_data(playlist_id, access_token):
     sp = spotipy.Spotify(auth=access_token)
-    playlist_songs = sp.playlist_tracks(playlist_id, 'items(track(id, name, artists, album(id, name)))')
+    fields = ('next,items(track(id,name,artists(name),album(id,name,release_date),'
+              'popularity,explicit,duration_ms,external_urls))')
+    page = sp.playlist_items(playlist_id, fields=fields, additional_types=('track',))
+    tracks = []
+    while page:
+        tracks += [item['track'] for item in page['items'] if item.get('track') and item['track'].get('id')]
+        page = sp.next(page) if page.get('next') else None
+
+    track_ids = list(dict.fromkeys(track['id'] for track in tracks))
+    audio_features = get_audio_features(track_ids)
+
     music_data = []
-    for info in playlist_songs['items']:
-        song = info['track']
-        song_name = song['name']
-        artists = ', '.join([artist['name'] for artist in song['artists']])
-        album_name = song['album']['name']
-        album_id = song['album']['id']
-        song_id = song['id']
-        if song_id != 'Not available':
-            try:
-                audio_features = sp.audio_features(song_id)[0]
-            except TypeError:
-                audio_features = None
-        else:
-            audio_features = None
-        if album_id != 'Not available':
-            album_info = sp.album(album_id)
-            release_date = album_info['release_date']
-        else:
-            album_info = None
-            release_date = None
-        if song_id != 'Not available':
-            info = sp.track(song_id)
-            popularity = info['popularity']
-
-        else:
-            info = None
-            popularity = None
-
-        song_data = {
-            'Song Name': song_name,
-            'Artists': artists,
-            'Album Name': album_name,
-            'Album ID': album_id,
-            'Track ID': song_id,
-            'Popularity': popularity,
-            'Release Date': release_date,
-            'Duration (ms)': audio_features['duration_ms'] if audio_features else None,
-            'Explicit': info.get('explicit', None),
-            'External URLs': info.get('external_urls', {}).get('spotify', None),
-            'Danceability': audio_features['danceability'] if audio_features else None,
-            'Energy': audio_features['energy'] if audio_features else None,
-            'Key': audio_features['key'] if audio_features else None,
-            'Loudness': audio_features['loudness'] if audio_features else None,
-            'Mode': audio_features['mode'] if audio_features else None,
-            'Speechiness': audio_features['speechiness'] if audio_features else None,
-            'Acousticness': audio_features['acousticness'] if audio_features else None,
-            'Instrumentalness': audio_features['instrumentalness'] if audio_features else None,
-            'Liveness': audio_features['liveness'] if audio_features else None,
-            'Valence': audio_features['valence'] if audio_features else None,
-            'Tempo': audio_features['tempo'] if audio_features else None,
-        }
-        music_data.append(song_data)
-    df = pd.DataFrame(music_data)
+    for song in tracks:
+        song_features = audio_features.get(song['id'])
+        if song_features is None:
+            continue
+        music_data.append({
+            'Song Name': song['name'],
+            'Artists': ', '.join(artist['name'] for artist in song['artists']),
+            'Album Name': song['album']['name'],
+            'Album ID': song['album']['id'],
+            'Track ID': song['id'],
+            'Popularity': song['popularity'],
+            'Release Date': song['album']['release_date'],
+            'Duration (ms)': song['duration_ms'],
+            'Explicit': song['explicit'],
+            'External URLs': song['external_urls'].get('spotify'),
+            **song_features,
+        })
+    df = pd.DataFrame(music_data, columns=PLAYLIST_COLUMNS).drop_duplicates(subset='Track ID')
+    df = df.dropna(subset=list(AUDIO_FEATURES.values())).reset_index(drop=True)
+    df.attrs['total_tracks'] = len(track_ids)
     return df
 
 
