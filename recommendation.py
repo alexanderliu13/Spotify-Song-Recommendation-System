@@ -39,7 +39,8 @@ def hybrid_recommendations(input_song_name, music_df, music_features_scaled, num
 
 
 def parse_playlist_id(playlist_link):
-    match = re.search(r'(?:playlist[/:]|^)([A-Za-z0-9]{22})(?:$|[/?#&])', playlist_link.strip())
+    match = re.fullmatch(r'(?:(?:https?://)?open\.spotify\.com/(?:intl-[\w-]+/)?playlist/|spotify:playlist:)?'
+                         r'([A-Za-z0-9]{22})(?:[/?#].*)?', playlist_link.strip())
     return match.group(1) if match else None
 
 
